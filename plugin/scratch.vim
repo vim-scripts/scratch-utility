@@ -12,10 +12,25 @@
 " ---------------
 " The ones defined below are not very ergonomic!
 "----------------------------------------------------------------------
-map <F5> :call <SID>ShowScratchBuffer()<cr>
-imap <F5> <esc>:call <SID>ShowScratchBuffer()<cr>a
-map <F6> :call <SID>HideScratchBuffer()<cr>
-imap <F6> <esc>:call <SID>HideScratchBuffer()<cr>a
+"Standard Inteface:  <F8> to make a new ScratchBuffer, shift-<F8> to hide one
+if !hasmapto('<Plug>ShowScratchBuffer',"n")
+  nmap <unique> <F8> <Plug>ShowScratchBuffer
+endif
+if !hasmapto('<Plug>InsShowScratchBuffer',"i")
+  imap <unique> <F8> <Plug>InsShowScratchBuffer
+endif
+if !hasmapto('<Plug>HideScratchBuffer',"n")
+  nmap <unique> <S-F8> <Plug>HideScratchBuffer
+endif
+if !hasmapto('<Plug>InsHideScratchBuffer',"i")
+  imap <unique> <S-F8> <Plug>InsHideScratchBuffer
+endif
+
+" User Overrideable Plugin Interface
+nmap <silent> <Plug>ShowScratchBuffer    :silent call      <SID>ShowScratchBuffer()<cr>
+nmap <silent> <Plug>HideScratchBuffer    :silent call      <SID>HideScratchBuffer()<cr>
+imap <silent> <Plug>InsShowScratchBuffer <c-o>:silent call <SID>ShowScratchBuffer()<cr>
+imap <silent> <Plug>InsHideScratchBuffer <c-o>:silent call <SID>HideScratchBuffer()<cr>
 
 "----------------------------------------------------------------------
 " Diplays the scratch buffer. Creates one if it is an already 
