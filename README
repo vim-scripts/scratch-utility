@@ -1,0 +1,10 @@
+This is a mirror of http://www.vim.org/scripts/script.php?script_id=389
+
+This is a simple plugin that creates a scratch buffer for your
+vim session and helps to access it when you need it.  
+                                                                 
+If you like the custom mapping provided in the script - hitting
+<F8> should create a new scratch buffer. You can do your scribes
+here and if you want to get rid of it, hit <F8> again. If you want to 
+get back to the scratch buffer hit <F8> again.
+
