@@ -28,10 +28,12 @@ function! <SID>ShowScratchBuffer()
     if(buffer_number == -1)
         echo "buffer does not exist"
         exec('badd '. s:SCRATCH_BUFFER_NAME)
+        let buffer_number = bufnr(s:SCRATCH_BUFFER_NAME)
     endif    
     let buffer_win=bufwinnr(s:SCRATCH_BUFFER_NAME)
     if(buffer_win == -1)
-        sbuffer [buffer_number]
+        exec('sb '.buffer_number)
+        "sbuffer [buffer_number]
         set buftype=nofile
         set bufhidden=hide
         set noswapfile
