@@ -1,8 +1,8 @@
 " scratch.vim
 " Author: Abhilash Koneri <abhilash_koneri at hotmail.com>
-" Last Change: 03-Nov-2003 @ 21:03
+" Last Change: 06-Jan-2003 @ 12:47
 " Created: 17-Aug-2002
-" Version: 0.5
+" Version: 0.6
 " Download From:
 "     http://www.vim.org/script.php?script_id=389
 "----------------------------------------------------------------------
@@ -43,26 +43,21 @@ let s:buffer_number = -1
 " present
 "----------------------------------------------------------------------
 function! <SID>ShowScratchBuffer()
-    if(s:buffer_number == -1)
-    " Temporarily modify isfname to avoid treating the name as a pattern.
-    let _isf = &isfname
-    set isfname-=\
-    set isfname-=[
-"   exec "sp \\". s:SCRATCH_BUFFER_NAME
-    if exists('+shellslash')
-       exec "sp \\\\". s:SCRATCH_BUFFER_NAME
-    else
-       exec "sp \\". s:SCRATCH_BUFFER_NAME
-    endif
-    let &isfname = _isf
+    if(s:buffer_number == -1 || bufexists(s:buffer_number) == 0)
+	" Temporarily modify isfname to avoid treating the name as a pattern.
+	    let _isf = &isfname
+	    set isfname-=\
+	    set isfname-=[
+	    exec "sp \\". s:SCRATCH_BUFFER_NAME
+	    let &isfname = _isf
         let s:buffer_number = bufnr('%')
     else
-    let buffer_win=bufwinnr(s:buffer_number)
-    if(buffer_win == -1)
-        exec('sb '. s:buffer_number)
-    else
-        call <SID>GotoWindow(buffer_win)
-    endif
+	    let buffer_win=bufwinnr(s:buffer_number)
+	    if(buffer_win == -1)
+	        exec('sb '. s:buffer_number)
+	    else
+	        call <SID>GotoWindow(buffer_win)
+	    endif
     endif
     " Do setup always, just in case.
     set buftype=nofile
@@ -79,15 +74,15 @@ endfunction
 " open. (stole this from WinManager.vim)
 "-----------------------------------------------------------------------
 function! <SID>GotoWindow(reqdWinNum)
-    let startWinNum = bufwinnr("")
-    while bufwinnr("") != a:reqdWinNum
-        wincmd w
-        if bufwinnr("") == startWinNum
-            let v:errmsg = "Couldn't find window ".a:reqdWinNum
-            return 0
-        endif
-    endwhile
-    return 1
+	let startWinNum = bufwinnr("")
+	while bufwinnr("") != a:reqdWinNum
+		wincmd w
+		if bufwinnr("") == startWinNum
+			let v:errmsg = "Couldn't find window ".a:reqdWinNum
+			return 0
+		endif
+	endwhile
+	return 1
 endfunction
 
 " vim6: sw=4
