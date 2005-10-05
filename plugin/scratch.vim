@@ -1,8 +1,9 @@
 " scratch.vim
-" Author: Abhilash Koneri <abhilash_koneri at hotmail.com>
-" Last Change: 06-Jan-2003 @ 12:47
+" Author: Abhilash Koneri (abhilash_koneri at hotmail dot com)
+" Improved By: Hari Krishna Dara (hari_vim at yahoo dot com)
+" Last Change: 25-Feb-2004 @ 09:48
 " Created: 17-Aug-2002
-" Version: 0.6
+" Version: 1.0.0
 " Download From:
 "     http://www.vim.org/script.php?script_id=389
 "----------------------------------------------------------------------
@@ -12,19 +13,44 @@
 " If you like the custom mappings provided in the script - hitting
 " <F8> should create a new scratch buffer. You can do your scribes
 " here and if you want to get rid of it, hit <F8> again inside scratch buffer
-" window. If you want to get back to the scratch buffer repeat <F8>.
+" window. If you want to get back to the scratch buffer repeat <F8>. Use
+" <Plug>ShowScratchBuffer and <Plug>InsShowScratchBuffer to customize these
+" mappings.
 "
+" If you want to designate a file into which the scratch buffer contents
+" should automatically be dumped to, when Vim exits, set its path to
+" g:scratchBackupFile global variable. This file can be accessed just in case
+" you happen to have some important information in the scratch buffer and quit
+" Vim (or shutdown the m/c) forgetting to copy it over. The target file is
+" force overwritten using the :write! command so make sure you set a file name
+" that can accidentally be used for other purposes (especially when you use
+" relative paths). I recommend a value of '/tmp/scratch.txt'.
+" CAUTION: This feature works only when Vim generates VimLeavePre autocommad.
 "
 " Custom mappings
 " ---------------
 " The ones defined below are not very ergonomic!
 "----------------------------------------------------------------------
 "Standard Inteface:  <F8> to make a new ScratchBuffer, <F8>-again to hide one
-if !hasmapto('<Plug>ShowScratchBuffer',"n")
-  nmap <unique> <silent> <F8> <Plug>ShowScratchBuffer
+
+if exists('loaded_scratch')
+  finish
 endif
-if !hasmapto('<Plug>InsShowScratchBuffer',"i")
-  imap <unique> <silent> <F8> <Plug>InsShowScratchBuffer
+let loaded_scratch = 1
+
+" Make sure line-continuations won't cause any problem. This will be restored
+"   at the end
+let s:save_cpo = &cpo
+set cpo&vim
+
+if (! exists("no_plugin_maps") || ! no_plugin_maps) &&
+      \ (! exists("no_scratch_maps") || ! no_scratch_maps)
+  if !hasmapto('<Plug>ShowScratchBuffer',"n")
+    nmap <unique> <silent> <F8> <Plug>ShowScratchBuffer
+  endif
+  if !hasmapto('<Plug>InsShowScratchBuffer',"i")
+    imap <unique> <silent> <F8> <Plug>InsShowScratchBuffer
+  endif
 endif
 
 " User Overrideable Plugin Interface
@@ -35,54 +61,74 @@ imap <script> <silent> <Plug>InsShowScratchBuffer
 
 command! -nargs=0 Scratch :call <SID>ShowScratchBuffer()
 
+if !exists('g:scratchBackupFile')
+  let g:scratchBackupFile = '' " So that users can easily find this var.
+endif
+aug ScratchBackup
+  au!
+  au VimLeavePre * :call <SID>BackupScratchBuffer()
+aug END
+
 let s:SCRATCH_BUFFER_NAME="[Scratch]"
-let s:buffer_number = -1
+if !exists('s:buffer_number') " Supports reloading.
+  let s:buffer_number = -1
+endif
 
 "----------------------------------------------------------------------
 " Diplays the scratch buffer. Creates one if it is an already 
 " present
 "----------------------------------------------------------------------
 function! <SID>ShowScratchBuffer()
-    if(s:buffer_number == -1 || bufexists(s:buffer_number) == 0)
-	" Temporarily modify isfname to avoid treating the name as a pattern.
-	    let _isf = &isfname
-	    set isfname-=\
-	    set isfname-=[
-	    exec "sp \\". s:SCRATCH_BUFFER_NAME
-	    let &isfname = _isf
-        let s:buffer_number = bufnr('%')
+  if(s:buffer_number == -1 || bufexists(s:buffer_number) == 0)
+    " Temporarily modify isfname to avoid treating the name as a pattern.
+    let _isf = &isfname
+    set isfname-=\
+    set isfname-=[
+    if exists('+shellslash')
+      exec "sp \\\\". s:SCRATCH_BUFFER_NAME
     else
-	    let buffer_win=bufwinnr(s:buffer_number)
-	    if(buffer_win == -1)
-	        exec('sb '. s:buffer_number)
-	    else
-	        call <SID>GotoWindow(buffer_win)
-	    endif
+      exec "sp \\". s:SCRATCH_BUFFER_NAME
     endif
-    " Do setup always, just in case.
-    set buftype=nofile
-    set bufhidden=hide
-    set noswapfile
-    set noro
-    nmap <buffer> <silent> <Plug>ShowScratchBuffer :hide<cr>
-    imap <buffer> <silent> <Plug>InsShowScratchBuffer <c-o>:hide<cr>
-    command! -buffer -nargs=0 Scratch :hide
+    let &isfname = _isf
+    let s:buffer_number = bufnr('%')
+  else
+    let buffer_win=bufwinnr(s:buffer_number)
+    if(buffer_win == -1)
+      exec 'sb '. s:buffer_number
+    else
+      exec buffer_win.'wincmd w'
+    endif
+  endif
+  " Do setup always, just in case.
+  setlocal buftype=nofile
+  setlocal bufhidden=hide
+  setlocal nobuflisted
+  setlocal noswapfile
+  setlocal noro
+  nmap <buffer> <silent> <Plug>ShowScratchBuffer :hide<cr>
+  imap <buffer> <silent> <Plug>InsShowScratchBuffer <c-o>:hide<cr>
+  command! -buffer -nargs=0 Scratch :hide
 endfunction
 
-"-----------------------------------------------------------------------
-" Moves the cursor to the scratch buffer if it is already
-" open. (stole this from WinManager.vim)
-"-----------------------------------------------------------------------
-function! <SID>GotoWindow(reqdWinNum)
-	let startWinNum = bufwinnr("")
-	while bufwinnr("") != a:reqdWinNum
-		wincmd w
-		if bufwinnr("") == startWinNum
-			let v:errmsg = "Couldn't find window ".a:reqdWinNum
-			return 0
-		endif
-	endwhile
-	return 1
+function! s:BackupScratchBuffer()
+  if s:buffer_number != -1 && exists('g:scratchBackupFile') &&
+        \ g:scratchBackupFile != ''
+    exec 'split #' . s:buffer_number
+    " Avoid writing empty scratch buffers.
+    if line('$') > 1 || getline(1) !~ '^\s*$'
+      let _cpo=&cpo
+      try
+        set cpo-=A
+        exec 'write!' g:scratchBackupFile
+      finally
+        let &cpo=_cpo
+      endtry
+    endif
+  endif
 endfunction
 
-" vim6: sw=4
+" Restore cpo.
+let &cpo = s:save_cpo
+unlet s:save_cpo
+
+" vim6: sw=2 et
